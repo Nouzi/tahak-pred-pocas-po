@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Ťahák k workshopu Pred · Počas · Po: tri vety na kopírovanie pri práci s AI agentom.">
+<title>Ťahák Pred · Počas · Po</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one narrow column, three phase blocks keyed by a colored phase tag; copyable prompts as "terminal cards" */
+:root {
+  --bg: #F6F7F5;
+  --surface: #FFFFFF;
+  --fg: #181B22;
+  --muted: #545B67;
+  --line: #DADDE2;
+  --pred: #B4560F;
+  --pocas: #2457C2;
+  --po: #181B22;
+  --code-bg: #181B22;
+  --code-fg: #ECEEF2;
+  --font-display: "Bricolage Grotesque", "Arial Black", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #13151A; --surface: #1D2027; --fg: #ECEEF2; --muted: #A6ADB9; --line: #333844;
+  --pred: #F0913E; --pocas: #79AEFF; --po: #ECEEF2; --code-bg: #0B0D11; --code-fg: #ECEEF2; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #13151A; --surface: #1D2027; --fg: #ECEEF2; --muted: #A6ADB9; --line: #333844;
+  --pred: #F0913E; --pocas: #79AEFF; --po: #ECEEF2; --code-bg: #0B0D11; --code-fg: #ECEEF2; color-scheme: dark }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 17px; line-height: 1.55; padding-inline: 16px; padding-block: 32px 64px; }
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.kicker { font-family: var(--font-mono); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(40px, 9vw, 64px); line-height: 1; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+h1 .p2 { color: var(--pocas); }
+.lead { margin: 0; color: var(--muted); max-width: 60ch; }
+section.phase { display: flex; flex-direction: column; gap: 16px; }
+.tag { font-family: var(--font-mono); font-weight: 600; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; margin: 0; }
+.pred .tag { color: var(--pred); } .pocas .tag { color: var(--pocas); } .po .tag { color: var(--po); }
+h2 { font-family: var(--font-display); font-weight: 800; font-size: 32px; line-height: 1.1; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.why { color: var(--muted); max-width: 62ch; }
+.prompt { background: var(--code-bg); color: var(--code-fg); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.prompt-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.prompt-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
+.prompt pre { margin: 0; font-family: var(--font-mono); font-size: 15px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.copy { font-family: var(--font-mono); font-size: 13px; background: transparent; color: var(--code-fg); border: 1px solid rgba(236,238,242,.35); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.copy:hover { border-color: var(--code-fg); }
+.copy:focus-visible { outline: 2px solid var(--pocas); outline-offset: 2px; }
+ul.rules { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+ul.rules li { padding-left: 18px; position: relative; }
+ul.rules li::before { content: ""; position: absolute; left: 0; top: .7em; width: 8px; height: 2px; background: currentColor; opacity: .5; }
+.pred ul.rules li::before { background: var(--pred); opacity: 1; }
+.pocas ul.rules li::before { background: var(--pocas); opacity: 1; }
+.po ul.rules li::before { background: var(--po); opacity: 1; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+td code { font-family: var(--font-mono); font-size: 14px; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.box h3 { margin: 0; font-size: 16px; font-weight: 600; }
+ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+ol.steps li::marker { color: var(--pocas); font-family: var(--font-mono); font-weight: 600; }
+.skills { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; font-size: 15px; }
+.skills code { font-family: var(--font-mono); font-weight: 600; }
+hr { border: none; border-top: 1px solid var(--line); margin: 0; }
+footer { font-size: 14px; color: var(--muted); display: flex; flex-direction: column; gap: 8px; }
+footer a { color: inherit; }
+.feedback { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+.feedback a.btn { font-family: var(--font-mono); font-size: 14px; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 8px; text-decoration: none; }
+@media (prefers-reduced-motion: no-preference) { .copy { transition: border-color .15s; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <p class="kicker">Týždeň učenia · FPV UCM · 12. 10. 2026</p>
+    <h1>Pred. <span class="p2">Počas.</span> Po.</h1>
+    <p class="lead">Tri návyky pri práci s AI agentom. Fungujú v každom nástroji aj v bežnom chate. Vety nižšie skopírujte a vložte.</p>
+  </header>
+
+  <section class="phase pred" id="pred">
+    <p class="tag">01 · Pred</p>
+    <h2>Nechajte sa grilovať</h2>
+    <p class="why">Agent vidí len to, čo napíšete. Čo chýba, si potichu domyslí. Nech sa preto najprv pýta, kým nemá čo domýšľať.</p>
+    <div class="prompt">
+      <div class="prompt-head"><span class="prompt-label">Pridajte za zadanie</span><button class="copy" type="button" id="copy-pred">Kopírovať</button></div>
+      <pre>Než začneš, vypytuj sa ma na všetko, čo by si si inak domyslel. Pýtaj sa v kolách. Kód píš, až keď nebudeš mať otázky.</pre>
+    </div>
+    <ul class="rules">
+      <li><b>Rozsah vlastníte vy.</b> Štyridsaťkrát „súhlasím“ znamená, že plán napísal agent.</li>
+      <li><b>Aspoň raz nesúhlaste.</b> Bez jedinej námietky ste sedenie nepotrebovali.</li>
+      <li><b>„Neviem“ je odpoveď.</b> Čo sa nedá vyriešiť rečou, vyskúšajte na rýchlom prototype.</li>
+      <li><b>Stovka otázok</b> znamená priveľkú úlohu. Rozdeľte ju.</li>
+    </ul>
+  </section>
+
+  <hr>
+
+  <section class="phase pocas" id="pocas">
+    <p class="tag">02 · Počas</p>
+    <h2>Chráňte smart zónu</h2>
+    <p class="why">Čím je rozhovor dlhší, tým horšie agent pracuje, aj keď okno ešte nie je plné. Pravidlo: jedna úloha, jedna relácia.</p>
+    <div class="box">
+      <h3>Signály, že ste v dumb zóne</h3>
+      <ul class="rules">
+        <li>Zabudne pokyn, ktorý ste dali pred mnohými správami.</li>
+        <li>Zopakuje chybu, ktorú už raz opravil.</li>
+        <li>Sebaisto tvrdí niečo, čo rozhovor vyvracia.</li>
+      </ul>
+      <p class="why">Vtedy nevysvetľujte znova. Urobte odovzdávku a pokračujte v novom chate.</p>
+    </div>
+    <div class="box">
+      <h3>Odovzdávka v troch krokoch</h3>
+      <ol class="steps">
+        <li>Nech ju napíše agent: vložte vetu nižšie.</li>
+        <li>Prečítajte ju. Čo ste neoverili, nech je tak aj označené.</li>
+        <li>Otvorte nový chat a vložte ju ako prvú správu.</li>
+      </ol>
+    </div>
+    <div class="prompt">
+      <div class="prompt-head"><span class="prompt-label">Na konci starého chatu</span><button class="copy" type="button" id="copy-handoff">Kopírovať</button></div>
+      <pre>Zhrň túto prácu pre niekoho, kto pri nej nebol: cieľ, čo je hotové, čo ďalej a čo je len neoverený predpoklad.</pre>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <tr><th>Možnosť</th><th>Čo zachová</th><th>Kedy</th></tr>
+        <tr><td>pokračovať</td><td>všetko, aj balast</td><td>ste v smart zóne, tá istá úloha</td></tr>
+        <tr><td><code>/compact</code></td><td>váš zámer, zhustený</td><td>tá istá úloha, okno sa plní</td></tr>
+        <tr><td><code>/clear</code></td><td>nič</td><td>všetko za vami je odpad</td></tr>
+        <tr><td>odovzdávka</td><td>prácu, ktorá sa dá preniesť</td><td>nový chat, iný nástroj, kolega</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <hr>
+
+  <section class="phase po" id="po">
+    <p class="tag">03 · Po</p>
+    <h2>Recenzia čerstvými očami</h2>
+    <p class="why">Agent, ktorý kód napísal, pri kontrole vidí to, čo chcel urobiť. Zmeny nech číta nová relácia, ktorá dostane len zadanie a zoznam zmien (diff: <code>git diff</code> alebo VS Code › Source Control).</p>
+    <div class="box">
+      <h3>Subagent: pomocník s prázdnou hlavou</h3>
+      <p class="why">Kódovacie agenty si na kontrolu púšťajú subagenta. Hlavný agent mu pošle krátke zadanie, subagent začína s prázdnym oknom a vráti len výsledok. Má čistý pohľad a hlavné okno ostane čisté. V bežnom chate to isté urobí nový chat.</p>
+    </div>
+    <div class="prompt">
+      <div class="prompt-head"><span class="prompt-label">Do nového chatu + zadanie + zmeny</span><button class="copy" type="button" id="copy-po">Kopírovať</button></div>
+      <pre>Nič neopravuj. Tu je zadanie a zmeny. Zvlášť vypíš: 1) čo nesedí so zadaním — chýba, je navyše, je zle; 2) čo porušuje pravidlá projektu. Pri každom náleze uveď riadok zadania alebo pravidlo.</pre>
+    </div>
+    <ul class="rules">
+      <li><b>Dve osi zvlášť.</b> Zadanie: je to správna vec? Štandardy: je to urobené správne?</li>
+      <li><b>Nález bez odkazu</b> na zadanie alebo pravidlo neberte vážne.</li>
+      <li><b>Nečakajte „čisto“.</b> Opravte podložené nálezy a skončite. Rozhodujete vy.</li>
+    </ul>
+  </section>
+
+  <hr>
+
+  <section class="phase" id="skills">
+    <p class="tag">V kódovacích agentoch</p>
+    <h2>To isté jedným príkazom</h2>
+    <p class="why">V nástrojoch ako Claude Code alebo Codex existujú tieto návyky ako hotové skills z otvorenej knižnice Matta Pococka.</p>
+    <div class="skills">
+      <code>/grill-me</code><span>vypytuje sa, kým zadanie nie je jasné</span>
+      <code>/handoff</code><span>napíše odovzdávku pre ďalšiu reláciu</span>
+      <code>/code-review</code><span>skontroluje zmeny na dvoch osiach</span>
+    </div>
+    <div class="prompt">
+      <div class="prompt-head"><span class="prompt-label">Inštalácia v termináli</span><button class="copy" type="button" id="copy-install">Kopírovať</button></div>
+      <pre>npx skills@latest add mattpocock/skills</pre>
+    </div>
+  </section>
+
+  <hr>
+
+  <footer>
+    <div class="feedback">
+      <p><b>Spätná väzba</b> · 2 minúty, anonymne</p>
+      <a class="btn" id="feedback-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfHWT-wBzZJzu2v-HRyIkhmGNDk_bnMA__KvP2snAvAUycpiA/viewform" target="_blank" rel="noopener">Otvoriť formulár</a>
+    </div>
+    <p>Verzia na tlač: <a href="tahak-a4.pdf">ťahák A4 (PDF)</a></p>
+    <p>Na čítanie ďalej: <a href="https://www.aihero.dev/" target="_blank" rel="noopener">aihero.dev</a> · <a href="https://www.aihero.dev/ai-coding-dictionary" target="_blank" rel="noopener">AI Coding Dictionary</a> · <a href="https://github.com/mattpocock/skills" target="_blank" rel="noopener">mattpocock/skills</a></p>
+  </footer>
+</div>
+
+<script>
+  // Adresu formulára doplňte sem (Google Forms):
+  var FEEDBACK_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfHWT-wBzZJzu2v-HRyIkhmGNDk_bnMA__KvP2snAvAUycpiA/viewform";
+  var fb = document.getElementById("feedback-link");
+  if (FEEDBACK_URL) { fb.href = FEEDBACK_URL; fb.target = "_blank"; fb.rel = "noopener"; }
+  else { fb.textContent = "Odkaz dostanete na workshope"; fb.removeAttribute("href"); }
+
+  document.querySelectorAll(".copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var pre = btn.closest(".prompt").querySelector("pre");
+      var text = pre.textContent;
+      function done(msg) { btn.textContent = msg; setTimeout(function () { btn.textContent = "Kopírovať"; }, 1600); }
+      function fallback() {
+        var r = document.createRange(); r.selectNodeContents(pre);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        done("Označené — Ctrl+C");
+      }
+      try {
+        navigator.clipboard.writeText(text).then(function () { done("Skopírované"); }, fallback);
+      } catch (e) { fallback(); }
+    });
+  });
+</script>
+</body>
+</html>
